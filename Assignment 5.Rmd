@@ -1,0 +1,404 @@
+---
+title: 'Applied Categorical Data: Homework 5'
+author: "Kerem Tuncer"
+date: "03/27/2021"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+## Question 1
+
+### Part A
+
+```{r}
+rm(list = ls())
+library(lmtest)
+library(ggplot2)
+crab <- read.table("http://users.stat.ufl.edu/~aa/cat/data/Crabs.dat", header = TRUE)
+```
+
+```{r}
+crab.mod <- glm(y ~ weight + as.factor(color), family="binomial", data=crab)
+summary(crab.mod)
+
+range(crab$weight)
+
+x <- seq(1.2, 5.2, .05)
+
+plot(y ~ weight, data=crab, type="n")
+
+for(k in 1:4){
+  lines(x, predict(crab.mod, data.frame(weight=x, color=k),
+        type="response"), col=k, lty=k, lwd=2)
+  }
+legend("bottomright", inset=.05, lty=1:4, col=1:4, lwd=2,legend=paste("color ", 1:4))
+```
+
+The prediction equation is the following for the whole model.
+
+$$logit(\hat\pi) = -3.2572 + 1.6928*weight + 0.1448c_2 - 0.1861c_3 - 1.2694c_4$$
+
+Now, let's look at the prediction equations relating weight to the probability of a satellite for each color.
+
+For color 2:
+
+$$logit(\hat\pi) = -3.2572 + 1.6928*weight + 0.1448 = -3.1124 + 1.6928*weight$$
+
+For color 3:
+
+$$logit(\hat\pi) = -3.2572 + 1.6928*weight - 0.1861 = -3.4433 + 1.6298*weight$$
+
+For color 4:
+
+$$logit(\hat\pi) = -3.2572 + 1.6928*weight - 1.2694 = -4.5266 + 1.6298*weight$$
+
+For color 1:
+
+$$logit(\hat\pi) = -3.2572 + 1.6928*weight$$
+
+Given that the weight coefficient of 1.6928 is the same for all four colors, we can say that weight has the same effect on the probability of having a satellite for all four colors according to this model. This information is also implied by the identical curves in our plot above. For each color, a kilogram change in weight has a multiplicative effect of exp(1.6928)=5.434677 on the odds of having a satellite. At any fixed value of weight, the estimated odds of the presence of a satellite for a color 2 crab is exp(0.1448) = 1.155808 times a color 1 crab; and for a color 3 crab is exp(-0.1861) = 0.8301906 times a color 1 crab, and for a color 4 crab is exp(-1.2694) = 0.2810002 times a color 1 crab.
+
+
+
+### Part B
+
+```{r}
+crab.int <- glm(y ~ weight * as.factor(color), family="binomial", data=crab)
+summary(crab.int)
+
+plot(y ~ weight, data = crab, type="n")
+
+for(k in 1:4){
+  lines(x, predict(crab.int, data.frame(weight=x, color=k),
+                   type="response"), col=k, lty=k, lwd=2)
+  }
+legend("bottomright", inset=.05, lty=1:4, col=1:4, lwd=2,legend=paste("color ", 1:4))
+```
+
+The prediction equation is the following for the whole model.
+
+$$logit(\hat\pi) = -1.6203 + 1.0483 * weight - 0.832c_2 - 6.2964c_3 + 0.4335c_4 + 0.3613c_2weight + 2.7065c_3weight - 0.8536c_4weight $$
+Now, let's look at the prediction equations relating weight to the probability of a satellite for each color.
+
+For color 2:
+
+$$logit(\hat\pi) = -1.6203 + 1.0483 * weight - 0.832 + 0.3613*weight = -2.4523 + 1.4096*weight $$
+For color 3:
+
+$$logit(\hat\pi) = -1.6203 + 1.0483 * weight - 6.2964 + 2.7065weight = -7.9167 + 3.7548*weight$$
+For color 4:
+
+$$logit(\hat\pi) = -1.6203 + 1.0483 * weight + 0.4335 - 0.8536weight = -1.1868 + 0.1947*weight$$
+
+For color 1:
+
+$$logit(\hat\pi) = -1.6203 + 1.0483 * weight$$
+
+When we add the interation term between weight and color type, then weight starts having a different effect on each color. As you can see, the shapes of the four curves relating weight to the presence of a satellite for the four colors are different. We can see curve that is much steeper for color 3, meaning that they become much more likely to have satelitees after a certain weight threshold is reached. The effect is much less substantial for color 4, as seen by the flatter curve and the smaller slope in the prediction equation.
+
+For each color, a kilogram change in weight has a separate multiplicative effect on the odds that the crab will have a satellite. For color 1, the multiplicative effect of weight is exp(1.0483). For color 2, the multiplicative effect of weight is exp(1.4096). For color 3, the multiplicative effect of weight is exp(3.7548). For color 4, the multiplicative effect of weight is exp(0.1947).
+
+### Part C
+
+```{r}
+library(lmtest)
+lrtest(crab.mod, crab.int)
+AIC(crab.mod)
+AIC(crab.int)
+```
+
+Our null hypothesis is that all of the coefficients that are not in the simple model, but that are in the complex model, are equal to zero. 
+Our alternative hypothesis is that at least one of the coefficients that is in the complex model, but not the simple model, is a non-zero value.
+
+The model with interaction terms has AIC of 197.6563, which is lower than simple model's AIC of 198.5423. This indicates that our complex model might have better fit but we still have to test it out. In our likelihood ratio test, the test statistic is 6.886 and the p-value is 0.07562. Therefore, we cannot reject our null hypothesis at the 0.05 alpha. As a result, the simple model has good enough fit, and does not require any interaction terms.
+
+
+## Question 2
+
+### Part A
+
+```{r}
+mbti <- read.table("http://users.stat.ufl.edu/~aa/cat/data/MBTI.dat", header = T)
+mbti.p <- mbti$drink/mbti$n
+mbti.mod <- glm(mbti.p ~ EI + SN + TF + JP, family=binomial, weights=mbti$n, data = mbti)
+summary(mbti.mod)
+asat <- glm(mbti.p ~ EI * SN * TF * JP, family=binomial, weights=mbti$n, data = mbti)
+anova(mbti.mod, asat, test="Chisq")
+```
+The null hypothesis, H0, is that the model fits. The alternative hypothesis, H1, is that the model does not fit. 
+
+With a residual deviance of 11.149, df = 11, and a P-value of 0.4309, we fail to reject the null hypothesis. So, there is no evidence of lack of fit, which means that the simple model is adequate.
+
+### Part B
+
+If I were to simplify the model by removing a predictor, it would be JP, because it is the least statistically significant and also has the smallest effect size.
+
+### Part C
+
+```{r}
+mbti.int <- glm(mbti.p ~ EI + SN + TF + JP + EI:SN + EI:TF + EI:JP + SN:TF + SN:JP + TF:JP, family=binomial, weights=mbti$n, data = mbti)
+AIC(mbti.mod)
+AIC(mbti.int)
+lrtest(mbti.mod, mbti.int)
+```
+
+Based on AIC, we will have to choose the model without the interaction terms because it has an AIC of 73.98986, which is lower than the AIC of 78.58169 from the model with interaction terms.
+
+Based on the likelihood ratio test, we have a test-statistics of 7.4082 and a p-value of 0.2847. Therefore, we cannot reject the null hypothesis. So, there is no evidence of lack of fit, which means that the simple model without interaction terms is adequate.
+
+### Part D
+
+```{r}
+library(MASS)
+fit7 <- glm(mbti.p ~ 1, family = binomial,weights=mbti$n, data = mbti)
+scope <- list(upper=formula(mbti.mod), lower=formula(fit7))
+scope2 <- list(upper=formula(mbti.int), lower=formula(fit7))
+stepAIC(fit7, direction = "forward", scope = scope2)
+stepAIC(fit7, direction = "forward", scope = scope)
+stepAIC(mbti.int, direction = "backward", scope = scope2)
+stepAIC(mbti.mod, direction = "backward", scope = scope)
+```
+
+```{r}
+## lowest AIC model
+final.mbti <- glm(formula = mbti.p ~ TF + EI + SN + TF:SN, family = binomial, 
+    data = mbti, weights = mbti$n)
+summary(final.mbti)
+```
+
+I have used both backward and forward stepwise regression to build a model with minimal AIC. I ran each algorithm twice: once with and once without interaction terms. Overall, the model that had the lowest AIC was the following : mbti.p ~ TF + EI + SN + TF:SN. This model includes the categorical variables of TF, EI, SN, and the interaction term between TF and SN. Its AIC was 71.07.
+
+## Question 3
+
+### Part A
+
+```{r}
+Dept <- rep(1:6, rep(2,6))
+Gender <- rep(c("Male","Female"), 6)
+Yes <- c(512,89,353,17,120,202,138,131,53,94,22,24)
+No <- c(313,19,207,8,205,391,279,244,138,299,351,317)
+data <- data.frame(Dept=Dept, Gender=Gender, Yes=Yes, No=No)
+rm(Dept, Gender, Yes, No)
+data
+```
+
+```{r}
+m1 <- glm(cbind(Yes,No) ~ factor(Dept), data=data, family=binomial)
+summary(m1)
+sat <- update(m1, ~ factor(Dept)*Gender)
+anova(m1, sat, test="Chisq")
+```
+With a residual deviance of 21.735, a df = 6, and a p-value of 0.001352, we are able to reject the null hypothesis that the simple model provides the best fit, finding evidence to support the claim that the addition of gender as a predictor and interaction term improves the model fit. 
+
+### Part B
+
+```{r}
+data$y.hat <- (data$Yes + data$No) * fitted(m1)
+data$resid <- rstandard(m1, type="pearson")
+data
+```
+
+```{r}
+ggplot(data, aes(y = resid, x = as.factor(Dept), col = as.factor(Dept))) + 
+  geom_bar(stat = "identity") + xlab("Department") + ylab("Standardized Residuals") + ggtitle("Standard resid by department") + geom_hline(yintercept = 3) + geom_hline(yintercept = -3)
+mean(subset(data, Gender == "Male" & Dept == 1)$resid)
+```
+
+If you look at the visualization above, you will see that Department 1 may be an outlier in the model. As it has a much larger standardized residuals than the other ones. A common heuristic is that values outside of standardized residuals of |3| are outliers. This is the case in our example for Department 1, which means that admission into dep 1 is more influenced by gender than for other departments. This has to with Department having more females being admitted than expected. For males, the standardized residual was equal to −4.153073 (which is a lot), so fewer males were admitted than expected if the model lacking gender effect was used.
+
+### Part C
+
+```{r}
+m2 <- update(m1, ~ . + Gender)
+exp(coef(m2))
+exp(coef(m2))[7]
+```
+
+First, we calculate the exponentials of the coefficients. Then, we will look at the computed value for the gender effect, which is 0.90495497. So, the estimated conditional odds ratio between admissions and gender (1 = male, 0 = female) is approximately 0.90. 
+
+### Part D
+
+```{r}
+m1a <- update(m1, ~ Gender)
+exp(coef(m1a))
+```
+
+We can also compute it like this:
+
+```{r}
+Count <- c(sum(data$Yes[data$Gender=="Male"]),sum(data$Yes[data$Gender=="Female"]),sum(data$No[ data$Gender=="Male"]),sum(data$No[ data$Gender=="Female"]) )
+Table <- matrix(Count, 2, 2)
+rownames(Table) <- c("Male", "Female")
+colnames(Table) <- c("Yes", "No")
+Table
+Table[1,1] * Table[2,2] / ( Table[1,2] * Table[2,1] )
+```
+
+
+The marginal table, collapsed over department, has odds ratio 1.84.
+
+### Part E
+
+This is an example of the Simpson's paradox, in which a trend appears in several different groups of data but disappears or reverses when these groups are combined. We can see that the conditional odds of men being admitted to a department is 0.9 times that of women over each department - meaning males are less likely to get admitted over women. Yet, when we collapse over departments, it is evident that men are actually more likely to be admitted as a whole; specifically, male odd of admission are 1.84 times that of female admission. A reason for this could be that males apply in relatively greater numbers to departments that have relatively higher acceptance rates.
+
+## Question 4
+
+### Part A
+
+```{r}
+food <- read.table("http://users.stat.ufl.edu/~aa/cat/data/Alligators2.dat", header = TRUE)
+names(food) <- c("lake","size","F","I","R","B","O")
+Sizes <- c(" < 2.3", " > 2.3")
+food$Size <- factor(rep(Sizes, 4), levels=Sizes[c(2,1)])
+Lakes <- c("George", "Hancock", "Oklawaha", "Trafford")
+food$Lake <- factor(rep(Lakes[c(2,3,4,1)], rep(2,4)), levels=Lakes)
+food
+```
+
+
+```{r}
+library(VGAM)
+fit <- vglm(cbind(I,R,B,O,F) ~ Size + Lake, data=food, family=multinomial)
+coefs <- round(coef(fit), 2)
+coefs <- matrix(coefs, 4, 5)
+rownames(coefs) <- paste("log(pi[", c("I","R","B","O"), "]/pi[F])",sep="")
+colnames(coefs) <- c("Intercept", "Length<2.3","Hancock", "Oklawaha", "Trafford")
+coefs
+```
+
+Prediction equation for pairing invertebrate category with baseline of fish:
+
+$$log(\frac{\pi[I]}{\pi[F]}) = -1.55 + 1.46*Length_{<2.3} -1.66*Hancock + 0.94*Oklawaha + 1.12*Trafford$$
+Prediction equation for pairing reptile category with baseline of fish:
+
+$$log(\frac{\pi[R]}{\pi[F]}) = -3.31 - 0.35*Length_{<2.3} + 1.24*Hancock + 2.46*Oklawaha + 2.94*Trafford$$
+Prediction equation for pairing bird category with baseline of fish:
+
+$$log(\frac{\pi[B]}{\pi[F]}) = -2.09 - 0.63*Length_{<2.3} + 0.70*Hancock - 0.65*Oklawaha + 1.09*Trafford$$
+Prediction equation for pairing other category with baseline of fish:
+
+$$log(\frac{\pi[O]}{\pi[F]}) = -1.90 + 0.33*Length_{<2.3} + 0.83*Hancock + 0.01*Oklawaha + 1.52*Trafford$$
+
+### Part B
+
+Since the effect estimate 1.46 > 0, invertebrates are relatively more likely than fish for the small length of alligators instead of the larger ones. The estimated odds that a gator < 2.3 feet will consistently choose invertebrates (as compared to the baseline of fish) is exp(1.46) = 4.3 times that of the odds of a gator above 2.3 feet.
+
+### Part C
+
+```{r}
+fitted(fit)
+fitted(fit)[3:4,5]
+```
+
+We can estimate the response probabilities with the fitted() function. The O column indicates Oklawaha. Then, the 3rd and forth rows indicate the observations from Oklawaha at different lengths. The third row is for below < 2.3 and the fourth row is for above > 2.3. In the end, we see that the estimated probability of primary food choice being fish is: for small length (<2.3) is 0.2581861 and for high length (>2.3) is 0.4584385 at Lake Oklawaha.
+
+
+## Question 5
+
+### Part A
+
+The prediction equation is the following:
+
+$$log(\hat\pi_R/\hat\pi_D) = −2.3+0.5x$$
+
+```{r}
+exp(0.5)
+```
+The estimated odds of preferring Republicans over Democrats increase by 65% for every 10,000$ of income per year.
+
+### Part B
+
+The logit equals 0, and hence the two estimated probabilities are the same, when x = 4.6 in the equation in Part A.
+
+```{r}
+2.3/0.5*10000
+```
+
+$\hat\pi_R > \hat\pi_D$ when annual income > $46,000.
+
+### Part C
+
+$$\hat\pi_I(x) = 0 + 0x$$
+$$\hat\pi_I = \frac{e^{\alpha_I + \beta_Ix}}{e^{\alpha_R + \beta_Rx} + e^{\alpha_D +\beta_Dx} + e^{\alpha_I+\beta_Ix}}$$
+
+$$\hat\pi_I = \frac{e^{0+0x}}{e^{1+0.3x} + e^{3.3 - 0.2x} + e^{0+0x}}$$
+
+$$\hat\pi_I = \frac{1}{e^{1+0.3x} + e^{3.3 - 0.2x} + 1}$$
+## Question 6
+
+### Part A
+
+```{r}
+Not <- c(6,6,6); 
+Pretty <- c(43,113,57); 
+Very <- c(75,178,117);
+Income <- c("Below", "Average", "Above")
+data.frame(Income, Not, Pretty, Very)
+```
+
+```{r}
+score = c(1,2,3)
+vglm.ind <- vglm(cbind(Pretty, Very, Not) ~ score, family=multinomial)
+vglm.ind
+```
+
+$$log(\hat\pi_1 / \hat\pi_3) = 2.2038939 + 0.1313533x$$
+
+$$log(\hat\pi_2 / \hat\pi_3) = 2.5551795 + 0.2275057x$$
+### Part B
+
+Since our Beta > 0, the estimated odds of being in the higher category (pretty happy) instead of the lower category (not happy) increases as income increases. 
+
+```{r}
+exp(0.1313533)
+```
+
+A unit change in income score will increase the odds of being pretty happy to not happy by a multiplicative effect of 1.140371.
+
+Likewise, since Beta > 0 in the second equation, the estimated odds of being in the higher category (very happy) instead of the lower category (not happy) increases as income increases. 
+
+```{r}
+exp(0.2275057)
+```
+
+A unit change in income score will increase the odds of being very happy to not happy by a multiplicative effect of 1.255465. This effect of very happy/not happy is larger than that of pretty happy/not happy as expected. These effects suggest that as the income creases, marital happiness increases. However, hypothesis testing is necessary to see if the effect is statistically significant.
+
+### Part C
+
+Null hypothesis: Beta = 0, meaning that there is no effect of income on marital happiness. In other words, the two things are independent.
+
+Null hypothesis: Beta ! 0, meaning that there is an effect of income on marital happiness. In other words, the two things are not independent
+
+```{r}
+waldtest(vglm.ind)
+```
+
+Our wald test statistic is equal to 0.9439 with df =2 and p-value of 0.6238. Given that the p-value is much larger than 0.05, we do not have enough evidence to conclude that income has an effect on marital happiness.
+
+### Part D
+
+```{r}
+summary(vglm.ind)
+```
+
+The residual deviance is 3.1909 and the degrees of freedom is 2. With this information, we can compute a deviance goodness-of-fit test.
+
+```{r}
+1-pchisq(3.1909, 2)
+```
+
+H0: model fits adequately
+
+Ha: model does not fit adequately
+
+As a result, we get the p-value of 0.2028172. Given that the p-value is above 0.05, we can say that the model fits adequately.
+
+### Part E
+
+```{r}
+predict(vglm.ind,data.frame(score=2), type="response")
+```
+
+The probability that a person with average family income (score = 2) reports a very happy marriage is 0.6135187.
+

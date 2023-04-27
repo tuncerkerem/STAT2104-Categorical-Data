@@ -1,0 +1,190 @@
+---
+title: 'Applied Categorical Data: Homework 2'
+author: "Kerem Tuncer"
+date: "02/11/2021"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+## Question 1
+
+```{r}
+rm(list = ls())
+```
+
+a) Let's first estimate the odds ratio.
+
+```{r}
+
+(802*494) / (34*53)
+
+```
+
+The odds ratio of 219.8602 shows that a person who voted for Obama in 2008 was 219.8602 times more likely to vote for Obama in 2012 compared to the person who did not vote for Obama in 2008.
+
+b) Now, we will get the 95% confidence interval for the population odds ratio.
+
+```{r}
+library(epitools)
+
+ORtable<-matrix(c(802,34,53,494),nrow = 2, ncol = 2)
+
+ORtable
+
+oddsratio.wald(ORtable)
+```
+
+
+As you can see from the output above, the 95% confidence interval for the population odds ratio is [140.8909, 343.0917]. We are about 95% confident that the true odds ratio lies in the interval above.
+
+## Question 2
+
+a) I will conduct both a G-test and chi-squared test of independence.
+
+```{r}
+library("DescTools")
+idtable<-matrix(c(871,347,821,42,336,83),nrow = 2, ncol = 3)
+chisq.test(idtable)
+DescTools::GTest(idtable,
+                 correct = "none")
+
+
+```
+
+Given that the p-value is remarkably lower than 0.05, we can say that the two characteristics are not independent. We can reject the null hypothesis and conclude that there exists significant difference between the party identification and race.
+
+b) Now, the standardized residuals:
+
+```{r}
+chisq.test(idtable)$stdres
+```
+
+The large negative standardized residuals of -11.96679 for white Democrats and -12.99946 for black Republicans show extremely strong evidence of fewer people in these cells than we’d expect if party ID were independent of race. The large positive standardized residuals of 11.96679 for black Democrats and 12.99946 for white Republicans show extremely strong evidence of more people in these cells than we’d expect if party ID were independent of race.
+
+## Question 3
+
+a) We cannot apply the chi square test of independence to this problem because the samples in the different columns are dependent as the subjects were able to select as many columns as they wished. One of the conditions for the chi-square test of independence is that the counts need to be independent of each other. If the subjects chose only one factor among the three possible ones, then the data would have been independent.
+
+b) This table provides enough information for us to classify each factor individually with gender. This is because we know the sample size of the survey, which is 100 men and women. So, the numbers we see in this original table basically show the amount of Yes responses for each factor across genders. Therefore, if we subtract the value in each cell from 100, then we will get the number of respondents who said no to that factor.
+
+c) Let's construct the contigency table for factor A. We already know the Male Yes (60) and Female Yes (75). To get the Male and Female NO's , we just have to subtract these values from 100, which will give us Male No of 40 and Female No of 25. Here is a visualization.
+
+```{r}
+
+con_table <- matrix(c(60,75,100-60,100-75,100,100), nrow = 2, ncol = 3) 
+dimnames(con_table)<-list(Gender=c("Male", "Female"), Factor_A=c("Yes","No", "Total"))
+con_table
+```
+
+
+## Question 4
+
+a) As you can see from the alternative formula, we multiply N (which is the table grand total a.k.a. sum of all cells) with the second part of the equation - which includes fraction of observations of type i ignoring the column attribute (fraction of row totals), and the fraction of observations of type j ignoring the row attribute (fraction of column totals). This means that there is a proportional relationship between n and X^2 for the chi-squared test of independence. When n increases, the chi-squared value increases. Therefore, it is extremely sensitive to sample size – when the sample size is too large (~500), almost any small difference will appear statistically significant. This is why this test is suitable for analyses where the sample size is neither too small nor too large, because it is easily impacted by sample size. 
+
+b) Chi-squared tests do not give information about the strength of association because the null hypothesis depends on the row and column totals, but not on the direction in which the rows and columns are recorded. Without a direction, it is not possible to measure the strength of the association, as its distribution only has a right tail. Its usefulness is limited as it treats variables as unordered categories. That is why we need the Phi coefficient or the Cramer's V to look at the strength.
+
+c) The estimated expected frequency of the row i and column j is this:
+
+$${\hat{\mu}}_{ij} = \frac{n_{i+}n_{+j}}{n}$$
+
+The total of estimated expected frequency of the row i equals,
+
+$$=\sum_{j}\frac{n_{i+}n_{+j}}{n} = \frac{n_{i+}}{n}\sum_{j} n_{+j} = n_{i+}$$
+The total of estimated expected frequency of the column j equals,
+
+$$=\sum_{i}\frac{n_{i+}n_{+j}}{n} = \frac{n_{+j}}{n}\sum_{i} n_{i+} = n_{+j}$$
+Therefore, $\{{\hat{\mu}}_{ij}\}$ have the same row and column totals as $\{n_{ij}\}$.
+
+d) For the 2x2 tables, odds ratio is given as,
+
+$$=\frac{n_{11}n_{22}}{n_{12}n_{21}}$$
+
+We can expand above like so,
+
+$$=\frac{\frac{n_{1+}n_{+1}}{n}\frac{n_{2+}n_{+2}}{n}}{\frac{n_{1+}n_{+2}}{n}\frac{n_{2+}n_{+1}}{n}}$$
+
+We can write this as,
+
+$$=\frac{{\hat{\mu}}_{11}{\hat{\mu}}_{22}}{{\hat{\mu}}_{12}{\hat{\mu}}_{21}} = 1$$
+
+Therefore, ${\hat{\mu}}_{ij}$ satisfies the null hypothesis.
+
+## Question 5
+
+The null hypothesis H0: θ = 1 for Fisher’s exact test states that the administration of prednisolone was independent of the normalization in the level of serum-ionized calcium. The
+alternative hypothesis is Ha: θ > 1 which is that the two events are not independent and a positive association between the administration of prednisolone and normalization in the level of serum-ionized calcium exists.
+
+```{r}
+fishertable<-matrix(c(7,8,0,15),nrow = 2, ncol = 2)
+fisher.test(fishertable, alternative = "greater")
+```
+
+We have a p-value of 0.003161, so we can reject our null hypothesis. We have enough evidence to conclude that θ > 1  and that Prednisolone has a positive effect on hypercalcaemia of breast cancer patients.
+
+## Question 6
+
+a) This is due to the Simpson's paradox, where a trend appears in several different groups of data but disappears or reverses when these groups are combined. For our specific scenario, it could be related to older people prefering to live in Maine as compared to South Carolina and younger people preferring to live in South Carolina than in Maine. This would result in Maine having a higher age distribution than South Carolina, so more old people and less young people. Given that the older age groups have higher death rate than young ones, Maine observes a total death rate than South Carolina.
+
+b) Yes, this is possible as stated by the Simpson's paradox, where a trend appears in several different groups of data but disappears or reverses when these groups are combined. Such a scenario could occur if Jones tends to have relatively more observations for years in which his average is high. Let's create an example. I will assume that in the first year, Jones had 160 hits in 400 at bats and in year 2, he had 40 hits in 200 at bats. This would mean that Jones's first year average is 0.4 and the second year average is 0.2, with an overall average of (160+40) / (400+200) = 0.333. Now, let's say that Smith had 90 hits in 200 at bats in the first year and 100 hits at 400 at bats in the second. So, Smith's first year average is 0.45 and and second year average is 0.25, with a total average of (90+100)/(200+400) = 0.31667. As you can see from these values, Smith had a higher average in 2019 and 2020 but Jones had a higher average when you combine.
+
+```{r}
+190/600
+```
+
+## Question 7
+
+a) TRUE. This statement is true because when X and Y are two independent variables, then $odds_{X} = odds_{Y}$ which means that:
+
+$$\theta = \frac{odds_{X}}{odds_{Y}} = 1$$
+
+b) TRUE. When we change the location of the row, then, we have to calculate the reciprocal and then switch the values for the confidence interval. This is because $\frac{a}{c}/\frac{b}{d}$ becomes $\frac{c}{a}/\frac{d}{b}$. Here is an example.
+
+```{r}
+example_mat <- matrix(c(1017,2260,165,992),nrow = 2, ncol = 2)
+example_mat2 <- matrix(c(165,992,1017,2260),nrow = 2, ncol = 2)
+oddsratio.wald(example_mat)$measure
+oddsratio.wald(example_mat2)$measure
+```
+
+
+Here, the OR confidence interval for the first matrix is [2.258339, 3.241093]. Let's switch the order of the rows. Now, we will get [1/3.241093, 1/2.258339].
+
+c) FALSE. This statement is false because the odds ratio is not dependent upon the response variable. 
+
+d) TRUE. X^2 and G^2 tests are useful when the data is measured on a nominal scale. Therefore, interchanging two rows and two columns do not affect the values of both of these statistics. The chi-squared is depends upon the values of the row total and the column total but not their order.
+
+e) FALSE. Conditional independence does not imply independence.
+
+f) TRUE. Let's say D is the odds that a democrat responds yes. Let's say R is the odds that a republican responds yes. Let's say I is the odds that an independent responds yes. Then D = 2.96I and I = 2.08R. So,
+
+$$D = 2.96I = 2.96(2.08R) = 6.16R \approx 6.2R $$
+
+So, a democrat is 6.2 times more likely to vote yes than republican.
+
+
+
+## Question 8
+
+a)  −0.0662 is the slope estimate (beta coefficient) of the linear probability model. It indicates that for a unit increase in x (so basically a unit increase in decade), the estimated probability, which is the percentage of times the starting pitcher pitched a complete game, decreases by 0.0662.
+
+b) 
+
+```{r}
+0.6930 − 0.0662*12
+```
+
+Our prediction would be -0.1014, which is not plausible and not realisitc because a predicted percentage for our problem has a valid range of [0,1] whereas our answer is negative. 
+
+c) $$\hat{\pi} = \frac{exp(1.057-0.368*x)}{1+exp(1.057-0.368*x)}, x = 12$$
+
+```{r}
+(exp(1.057 − 0.368*12))/(1 + exp(1.057 − 0.368*12))
+```
+
+As you can see from the code above, I confirmed that $\hat{P}(Y = 1 | X = 12) = 0.0336$. 
+
+This prediction is much more plausible given that it is a positive value, whereas the probability in the previous model was negative, which does not seem realistic.
+
+
+

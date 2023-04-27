@@ -1,0 +1,409 @@
+---
+title: 'Applied Categorical Data Analysis: Homework 4'
+author: "Kerem Tuncer"
+date: "03/13/2021"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+## Question 1
+
+```{r}
+rm(list = ls())
+library("aod")
+library("lmtest")
+library("epitools")
+```
+
+```{r}
+LI <- c(8, 8,10,10,12,12,12,14,14,14,16,16,16,18,20,20,20,22,
+22,24,26,28,32,34,38,38,38)
+y <- c(0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,0,1,1,0,1,1,1,0)
+log.mod <- glm(y ~ LI, family=binomial)
+summary(log.mod)
+```
+
+### Part A
+
+$$\hat\pi(12) = \frac{exp(\alpha + \beta x)}{1 + exp(\alpha + \beta x)} $$
+$$=\frac{exp(-3.77714 + 0.14486*12)}{1 + exp(-3.77714 + 0.14486*12)}$$
+$$= \frac{exp(-2.03882)}{1+exp(-2.03882)}$$
+$$ = \frac{0.1301822}{1.1301822} = 0.1151869 $$
+
+Therefore, at LI = 12, the $\hat\pi = 0.1151869$ So, the probability of remission for a patient with a labeling index value of 12 is 0.1151869.
+
+### Part B
+
+```{r}
+-as.numeric(coefficients(log.mod)[1]/coefficients(log.mod)[2])
+```
+The percentage of labeled cells at which the probability of remission will be 0.5 is 26.07384.
+
+Let's check if this LI value corresponds to a predicted probability of 0.5.
+
+```{r}
+predict(log.mod, type = "response", data.frame(LI = 26.07384))
+```
+
+Yes it does.
+
+### Part C
+
+```{r}
+exp(coefficients(log.mod)[2])
+```
+
+The odds of remission are multiplied by 1.155881 with each successive increase of one unit in LI. Let's see if this is actually is the case by comparing LI = 0 and LI = 1.
+
+```{r}
+inter <- unname(coefficients(log.mod)[1])
+beta <- unname(coefficients(log.mod)[2])
+exp(inter + beta * 1) / exp(inter)
+```
+Yes, this is correct.
+
+
+### Part D
+
+```{r}
+quantile(LI)
+q1  = predict(log.mod, data.frame(LI = 13), type = "resp")
+q2 = predict(log.mod, data.frame(LI = 25), type = "resp")
+q2-q1
+```
+
+The estimated probability of remission changes by 0.3303898 from the lower to upper quartile values of labeling index.
+
+## Question 2
+
+### Part A
+
+```{r}
+0.14486 * 0.1151869*(1- 0.1151869)
+```
+The estimated rate of change in $\pi(x)=Pr(Y=1|X=x)$ at $x=12$ is 0.01476397.
+
+### Part B
+
+```{r}
+0.14486/ 0.05934
+wald.test(b=coef(log.mod), Sigma = vcov(log.mod), Terms = 2)
+exp(0.14486 - 1.96*(0.05934))
+exp(0.14486 + 1.96*(0.05934))
+```
+
+The null hypothesis is that our beta (the change in remission probability for every LI unit change) is equal to zero. Our alternative hypothesis is that it is not equal to zero. If we reject our null hypothesis, we would be able to say that our two variables have statistically significant relationship.
+
+$$H_0 : \beta = 0$$
+$$H_a : \beta \neq 0$$
+
+
+The Wald test statistic is beta/se, which would give us a z of 2.441186. Therefore, our chi-squared value will be 2.441186^2 which is approximately 6. The p-value in this case is 0.015. Therefore, we can reject the null hypothesis. We have enough evidence to conclude that there is an effect of LI on the remission probability.
+
+Now, we also calculated the Wald 95% confidence interval for the odds ratio using the following formula:
+
+$$exp(\beta \pm 1.96*SE)$$
+Our confidence interval is [1.028965, 1.298444]. We are 95% confident that the odds of remission increase by a factor that is between 1.028965 and 1.298444 for every unit increase in LI. In other words,  The odds of remission at LI = x+1 are estimated to fall between 1.028965 and 1.298444 times the odds of remission at LI = x.
+
+### Part C
+
+```{r}
+lrtest(log.mod)
+exp(confint(log.mod)["LI",])
+```
+
+In a likelihood test, we have the following hypotheses.
+
+$$H_0=log\mu = \alpha$$
+$$H_a=log\mu = \alpha + \beta x$$
+
+Our likelihood ratio test chi-squared is 8.2988, which gives a p-value of 0.003967. Therefore, we can reject the null hypothesis. Therefore, we have enough evidence to conclude that LI is a significant predictor of remission rate.
+
+Now, we also have our likelihood intervals for the odds ratio, which are [1.043440, 1.329319]. This means that we are 95% confident that the odds of remission are increased by a multiplicative factor between 1.043440 and 1.329319 for every unit increase in LI. In other words, the odds of remission at LI = x+1 are estimated to fall between 1.04344 and 1.329319 times the odds of remission at LI = x.
+
+### Part D
+
+```{r}
+dat <- read.table("http://users.stat.ufl.edu/~aa/cat/data/Remission.dat", 
+           header=TRUE, skip=0)
+p <- dat$remissions/dat$cases
+fit <- glm(p ~ dat$LI, family=binomial, weights=dat$cases)
+summary(fit)
+lrtest(log.mod)
+```
+
+Yes, the parameter estimates and their SEs were the same. However, the null and residual deviances are not the same. This is because the number of rows in our ungrouped data is 27 and the number of rows for the grouped data is 14. However, the chi-squared value for the likelihood ratio test is the same.
+
+## Question 3
+
+### Part A
+
+```{r}
+crabs <- read.table("http://users.stat.ufl.edu/~aa/cat/data/Crabs.dat", skip = 0, header = T)
+crab.mod <- glm(y~weight, data = crabs, family="binomial")
+summary(crab.mod)
+```
+
+
+$$logit[\hat P(Y = 1)] = −3.6947 + 1.8151x$$
+$$\hat\pi = \frac{e^{−3.6947 + 1.8151x}}{1+e^{−3.6947 + 1.8151x}}$$
+
+
+## Part B
+
+```{r}
+1.8151/ 0.3767
+wald.test(b=coef(crab.mod), Sigma = vcov(crab.mod), Terms = 2)
+lrtest(crab.mod)
+```
+
+The null hypothesis for the Wald test is that our beta (the change in satellite probability for every unit change in weight) is equal to zero. Our alternative hypothesis is that it is not equal to zero. If we reject our null hypothesis, we would be able to say that our two variables have a statistically significant relationship.
+
+$$H_0 : \beta = 0$$
+
+$$H_a : \beta \neq 0$$
+
+
+The Wald test statistic is beta/se, which would give us a z of 4.818423. Therefore, our chi-squared value will be 4.818423^2 which is approximately 23.2. The p-value in this case is 1.4e-06. Therefore, we can reject the null hypothesis. We have enough evidence to conclude that there is an effect of weight on the satellite probability.
+
+For the likelihood test, we have the following hypotheses.
+
+$$H_0=log\mu = \alpha$$
+
+$$H_a=log\mu = \alpha + \beta x$$
+
+Our likelihood ratio test chi-squared is 30.021, which gives a p-value of 4.273e-08. Therefore, we can reject the null hypothesis. Therefore, we have enough evidence to conclude that weight is a significant predictor of probability of having a satellite.
+
+As you saw above, both of our test gave results that agreed with each other.
+
+### Part C
+
+```{r}
+numbers <- data.frame(weight=c(1.20,2.44,5.20))
+predict(crab.mod, numbers,type="response")
+```
+
+The value of $\hat \pi(x)$ at the weight values 1.2, 2.44, 5.2 are respectively 0.1799697, 0.6757320, and 0.9968084.
+
+### Part D
+
+```{r}
+-unname(crab.mod$coefficients[1]/crab.mod$coefficients[2])
+```
+We can divide the intercept by the beta estimate to find the weight at pi = 0.5. The weight at which the probability of a crab having at least a single satellite is 2.0355 kg.
+
+
+### Part E
+
+```{r}
+1.8151 * 0.5 * 0.5
+1.8151 * 0.5 * 0.5 * 0.1
+1.8151 * 0.5 * 0.5 * 0.58
+```
+
+We are trying to find the tangent line to the logistic curve at x = 2.035 and then predict the other value using that line. For this purpose, we would multiply our beta coefficient pi*(1-pi), which is 0.5^2 for our case. So, the estimated effect of 1kg increase would be 0.453775, of 0.1kg increase would be 0.0453775, and of 0.58 kg increase would be 0.2631895.
+ 
+### Part F
+
+```{r}
+exp(1.8151 + c(-1,1) * 1.96 * 0.3767)
+```
+
+We are 95% confident that that the odds of having having at least one satellite increases by a multiplicative factor between 2.935178 and 12.851133 for each unit increase in weight.
+
+## Question 4
+
+### Part A
+
+```{r}
+crabs$color <- as.factor(crabs$color)
+crab.log <- glm(y~as.factor(color), family="binomial", data=crabs)
+summary(crab.log)
+```
+$$logit(\hat \pi) = 1.0986 - 0.1226c_{2} - 0.7309c_{3} - 1.8608c_{4}$$
+If one of the C values is equal to 1, then the other ones will be zero. This is because is each color is mutually exclusive. A crab can have a single color indicator. This means that each category has its own beta coefficients which can be used to predict the log odds of having 1+ satellites. Also, we need to indicate that the model above used color 1 as the baseline color.
+
+```{r}
+exp(as.numeric(coefficients(crab.log)[4]))
+```
+When we compare c = 1 to c = 4, we can see that the probability of having at least one satellite decreases at color = 4 when compared to color = 1. The estimated odds of having at least one satellite when c=4 is 0.155556 times the odds of having at least one satellite at baseline color which is c =1.
+
+
+### Part B
+
+```{r}
+lrtest(crab.log)
+```
+
+In a likelihood test, we have the following hypotheses.
+
+$$H_0=log\mu = \alpha$$
+
+$$H_a=log\mu = \alpha + \beta x$$
+
+Our likelihood ratio test chi-squared is 13.698, which gives a p-value of  0.003347. Therefore, we can reject the null hypothesis. Therefore, we have enough evidence to conclude that at least one of the color factors has a statistically significant effect on the probability of having at least a single satellite. 
+
+### Part C
+
+```{r}
+crab.quant.log <- glm(y~as.numeric(color), family="binomial", data=crabs)
+summary(crab.quant.log)
+```
+$$logit(\pi) = 2.3635 - 0.7147x $$ 
+If we assume that color is a numeric value, then there is a decrease of 0.7147 for the logit probability of a crab having at least one satellite with each unit increase in color.
+ 
+### Part D
+
+```{r}
+lrtest(crab.quant.log)
+```
+
+In a likelihood test, we have the following hypotheses.
+
+$$H_0=log\mu = \alpha$$
+
+$$H_a=log\mu = \alpha + \beta x$$
+
+Our likelihood ratio test chi-squared is 12.461, which gives a p-value of  0.0004156. Therefore, we can reject the null hypothesis. Therefore, we have enough evidence to conclude that color (when regarded quantitatively) has a statistically significant effect on the probability of having at least a single satellite. 
+
+### Part E
+
+The advantage comes from having less parameters in our model. If remove color-specific beta parameters, then we will be reducing the variability for our estimation. Therefore, our df will be smaller and we will have a smaller standard error. The model with less parameters is also easier to interpret.
+
+The disadvantage is that the quantitative model may not be a linear trend for the effect of color, so we may not be able to establish a realistic pattern. Also, having less coefficients may bring more bias to our model. 
+
+## Question 5
+
+### Part A
+
+```{r}
+mbti <- read.table("http://users.stat.ufl.edu/~aa/cat/data/MBTI.dat", header = T)
+```
+
+```{r}
+mbti$alc <- ((mbti$drink)/(mbti$n)*100)
+mbti[which.max(mbti$alc),]
+```
+
+ESTP personality types has the highest percentage that report drinking alcohol frequently.
+ 
+ 
+### Part B
+
+```{r}
+mbti.p <- mbti$drink/mbti$n
+mbti.mod <- glm(mbti.p ~ EI + SN + TF + JP, family=binomial, weights=mbti$n, data = mbti)
+summary(mbti.mod)
+```
+
+$$logit(\hat \pi) = -2.114 - 0.555x_{EI} - 0.4292x_{SN} + 0.6873x_{TF} + 0.2022x_{JP}$$
+
+I have made each binary scale an indicator variable. Therefore, we ended up having 4 independent variables. Also, given that each binary scale had two possible categories, R registered one of the two categories (from each scale) as the baseline for their respective coefficient.
+
+
+```{r}
+lrtest(mbti.mod)
+```
+
+In a likelihood test, we have the following hypotheses.
+
+$$H_0=log\mu = \alpha$$
+
+$$H_a=log\mu = \alpha + \beta x$$
+
+Our likelihood ratio test chi-squared is 19.339, which gives a p-value of 0.0006741. Therefore, we can reject the null hypothesis. Therefore, we have enough evidence to conclude that at least one of the personality indicators has a statistically significant effect on the probability of drinking. 
+
+
+### Part C
+
+```{r}
+1-pchisq(mbti.mod$deviance, mbti.mod$df.residual)
+```
+In this scenario, our null hypothesis is that the model that we have created has a better model fit compared to a simple model. We cannot reject the hypothesis, so we don't have enough evidence to show that a model with fewer indicators will have a better fit. We can conclude that our model has a better fit than a model with less indicators.
+
+### Part D
+
+```{r}
+coefficients(mbti.mod)
+```
+
+
+Our model uses ISTP as the baseline personality types. As the beta coefficient is negative when I = 1 and S = 1, and positive when T = 1 and P = 1, we can say that ENTP has the highest probability. This is different than our initial guess of ESTP.
+
+## Question 6
+
+### Part A
+
+```{r}
+sorethroat <- read.table(file="http://users.stat.ufl.edu/~aa/cat/data/SoreThroat.dat", header=T)
+```
+
+```{r}
+sore.mod <- glm(Y~D+T, data=sorethroat, family=binomial)
+summary(sore.mod)
+```
+
+$$logit(\hat \pi) = -1.41734 + 0.06868D - 1.65895T$$
+
+The log odds of a patient having a sore throat increases by 0.06868 with every one unit increase of the duration of surgery. Also, the log odds of a patient having a sore throat decreases by 1.65895 when a patient uses a tracheal tube as opposed to a laryngeal mask.
+
+### Part B
+
+```{r}
+summary(sore.mod)$coefficients["D",4]
+```
+The p-value from the z-value of our Wald test for D is 0.009313474. Hence, we can reject the null hypothesis. We have enough evidence to conclude that there is a positive relationship between duration of a surgery and the odds of a reported throat soreness after the surgery.
+
+
+### Part C
+
+```{r}
+sore.interaction.mod <- glm(Y~D*T, data=sorethroat, family=binomial)
+summary(sore.interaction.mod)
+```
+Here is the original prediction equation.
+
+$$logit(\hat\pi) = 0.04979 + 0.02848D -4.47224T + 0.0746DT$$
+Now, this is the prediction equation when T = 0.
+
+$$logit(\hat\pi) = 0.04979 + 0.02848D$$
+
+The conditional odds ratio for T = 0 is exp(0.02848) = 1.028889. So it can be said that there is a 2.889% increase in the odds of experiencing a sore throat for unit increase in the duration of the surgery given T =0.
+
+
+And this is the prediction equation when T = 1.
+ 
+ $$logit(\hat\pi) = -4.42245 + 0.10308D$$
+The conditional odds ratio for T = 1 is exp(0.02848) =1.10858. So it can be said that there is a 10.858% increase in the odds of experiencing a sore throat for unit increase in the duration of the surgery given T = 1.
+
+### Part D
+
+```{r}
+lrtest(sore.mod, sore.interaction.mod)
+```
+
+My chi-squared value of for the likelihood test between my model with and without interactio terms was 1.8169 and the p-value was 0.1777. This is a large p-value so we cannot reject the null hypothesis. We don't have enough evidence to say that the model with the interaction terms will give us a better fit. That is why we can continue with our first model that does not have any interaction term.
+
+### Part E
+
+```{r}
+x <- range(sorethroat$D)
+x <- seq(x[1], x[2])
+
+par(mfrow=c(1,2)); set.seed(21406);
+
+plot(jitter(Y,.2) ~ D, pch=2-T, data=sorethroat, ylab="Pr(SoreThroat)",xlab="Duration", main="Main effects model")
+
+curve(predict(sore.mod, data.frame(D=x,T=1), type="response"), lty=1, add=T)
+curve(predict(sore.mod, data.frame(D=x,T=0), type="response"), lty=2, add=T)
+legend("bottomright", inset=.05, pch=1:2, lty=1:2,legend=c("Tracheal tube", "Laryngeal mask"))
+
+plot(jitter(Y,.2) ~ D, pch=2-T, data=sorethroat, ylab="Pr(SoreThroat)",xlab="Duration", main="Interaction model")
+curve(predict(sore.interaction.mod, data.frame(D=x,T=1), type="response"), lty=1, add=T)
+curve(predict(sore.interaction.mod, data.frame(D=x,T=0), type="response"), lty=2, add=T)
+legend("bottomright", inset=.05, pch=1:2, lty=1:2,legend=c("Tracheal tube", "Laryngeal mask"))
+```
+
+In the main effects model, the two log curves look relatively parallel. When we are changing T to be 0 or 1 (depending on the airway stabilizer used), the intercept of the plot changes but the beta coefficients stay the same. Yet, our interaction model shows a large discrepancy in both the intercept and the the beta coefficients between T=0 and T=1. In the main effects model, a tracheal tube results in a higher probability of sore throat then laryngeal masks in all durations before 100. After 100, they are the same. In the interaction model, the laryngeal masks result in a higher probability of having sore throat in lower durations (<45). However, tracheal tube results in a higher probability of sore throat after that. This is because the probability of sore throat for tracheal tube increases steeply between 20 and 70.
+ 

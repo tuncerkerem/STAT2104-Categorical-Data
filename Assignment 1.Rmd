@@ -1,0 +1,340 @@
+---
+title: "Homework 1"
+author: "Kerem Tuncer"
+date: "01/28/2020"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+## Question 1
+
+a) Political party affiliation - nominal
+
+b) Highest degree obtained - ordinal
+
+c) Patient condition - ordinal
+
+d) Hospital location - nominal
+
+e) Favorite beverage - nominal
+
+f) How often feel depressed - ordinal
+
+## Question 2
+
+a) Natural response variables: attitude toward gun control; explanatory variables: gender, mother's education.
+
+b) Natural response variables: heart disease; explanatory variables: blood pressure, cholesterol.
+
+c) Natural response variables: vote for president, explanatory variables: race, religion, annual income.
+
+## Question 3
+
+a) This is a binomial distribution scenario with n = 100 and p = 1/4 because there are 4 choices and 100 questions. The expected value of a binomial distribution is n*p.
+
+```{r}
+n = 100
+p = 0.25
+n*p #expected value
+```
+
+The expected value is 25.
+
+Standard deviation for a binomial distribution is given by sqrt(npq). Our q is equal to 1 - p, which gives q = 0.75.
+
+```{r}
+q = 1 - p
+sqrt(n*p*q) #standard deviation
+```
+
+The standard deviation is 4.330127
+
+b) In this scenario where p = 1/4, 50 correct answers would be surprising. This is because the z-score would be (50-25) / 4.330127.
+
+```{r}
+(50-25) / 4.330127 #z-score
+```
+This means that 50 correct responses is approximately 5.77 standard deviations away from the mean.
+
+```{r}
+pnorm(5.773503, lower.tail = FALSE) #probability of obtaining results at least as extreme as the observed results
+```
+
+As you can see, the p-value is very close to 0. This is very surprising. 5.77 standard deviations is pretty big.
+
+## Question 4
+
+a) Let's define our parameters. So, we have a probability p = 0.6 and n = 4. Therefore, we can possibly have 0,1,2,3,4 successes. I will use R to calculate the probability of each.
+
+```{r}
+#k=0
+dbinom(0, size=4, prob=0.6) 
+#k=1
+dbinom(1, size=4, prob=0.6) 
+#k=2
+dbinom(2, size=4, prob=0.6) 
+#k=3
+dbinom(3, size=4, prob=0.6) 
+#k=4
+dbinom(4, size=4, prob=0.6) 
+```
+
+For k=0, prob = 0.0256
+For k=1, prob = 0.1536
+For k=2, prob = 0.3456
+For k=3, prob = 0.3456
+For k=4, prob = 0.1296.
+
+Now, it is time to calculate the mean and the standard deviation of the distribution.
+
+```{r}
+new_n = 4
+new_p = 0.6
+new_q = 1 - new_p
+
+new_n*new_p #expected value
+sqrt(new_n*new_p*new_q) #standard deviation
+```
+The distribution's mean is 2.4 and the standard deviation is 0.9797959.
+
+
+b) Let's first fill the binomial formula with our parameters n = 4 and k = 3. This gives us the binomial likelihood function l(pi) = (4!/3!)(pi^3)(1-pi). This probability is defined for all the potential values of pi between 0 and 1. To sketch the likelihood function, I will first create a sequence of probabilities from 0 to 1, with an interval of 0.01. These values will be in the x-axis and make up the binomial parameter pi. Then, for the y-values, which will be the likelihoods, I will plug in these bionomial parameters to the above likelihood function. In the end, I will plot it.
+
+$$L(\pi, y = 3) = \frac{4!}{3!(4-3)!}\pi^3(1 - \pi)^{4-3}, \ given \ 0 \le \pi \le 1$$
+
+```{r}
+pi_parameter = seq(0,1,0.01)
+likelihood = dbinom(3,4,pi_parameter) #same thing as (4!/3!)(pi^3)(1-pi)
+plot(pi_parameter,likelihood, type = 'l')
+
+max(likelihood) #0.421875 which is the maximum likelihood
+pi_parameter[which.max(likelihood)] #0.75 which is the binomial parameter pi with highest maximum likelihood
+
+```
+
+
+The maximum likelihood estimate of a parameter is the parameter value at which the likelihood function takes its maximum. Therefore, it makes sense that pi = 0.75 is the maximum likelihood estimate, because our binomial likelihood function (4!/3!)(pi^3)(1-pi) takes its maximum point at 0.75 according to the graph. Pi = 0.75 is clearly where the likelihood value peaks in the y-axis. We could have used calculus to do this, as well but I am rusty in calculus right now.
+
+## Question 5
+
+a) I will begin by estimating the population proportion of those who said yes. This can be calculated with 486/1374. This value will give us the maximum likelihood estimate of pi.
+
+```{r}
+486/1374 #population proportion of those who said yes
+```
+
+The maximum likelihood estimate of the population proportion who would say yes is 0.3537118. Now, I will construct a 99% confidence interval.
+
+```{r}
+prop.test(486, 1374, p = .5,conf.level=0.99, correct = FALSE) #calculating the confidence interval
+```
+The 99% confidence interval for the population proportion of those would say yes is [0.3212625, 0.3875671]. Given that the null probability of 0.5 is not inside the confidence interval, we can reject the null hypothesis that pi is equal to 0.5. There is sufficient evidence to conclude that the pi is not equal to 0.5. Given that this proportion is not 0.5, we should also conduct a one-sided test to see if those who say yes are in the minority or the majority.
+
+b) Now, let's do the significance testing. I will once again use the function prop.test in R. Here, my null hypothesis will be that our population proportion estimate for those that say yes will equal 0.5 (neither a majority nor minority). Given that 486/1374 < 0.5, my alternative hypothesis will be that the proportion will be less than 0.5.
+
+```{r}
+prop.test(486, 1374, p=0.50, alternative="less") #hypothesis test
+```
+
+Accordingly, we have a p-value that is below 2.2e-16. This is much smaller than the usual alpha level of 0.05. Therefore, we can reject the null hypothesis. There is sufficient evidence to conclude that pi is less than 0.5. It is likely that only the minority of the population would say yes.
+
+## Question 6
+
+a) We will use the binom.test function in R to conduct a significance test. Our y = 8 and n = 10 and the pi = 0.5 in the function. Here, my null hypothesis will be that our pi is equal to 0.5, whereas the alternative hypothesis will be that the pi is greater than 0.5.
+
+```{r}
+binom.test(8, 10, p=0.50, alternative="greater") #hypothesis test
+```
+
+As you can, see our p-value is 0.05469, so we cannot reject the null hypothesis that pi is equal to 0.5. There is not enough evidence to conclude that pi is greater than 0.5 at the 0.05 alpha level.
+
+b) Now, I will use the binom.test function again to find the confidence interval at the %95 level.
+
+```{r}
+binom.test(8, 10, p =.5, conf.level=0.95, alternative="two.sided") #calculating the confidence interval
+```
+The 95% confidence interval for pi is [0.4439045, 0.9747893]. Given that the null value of 0.5 is included in the interval, we fail to reject our null hypothesis. There is not enough evidence to support the claim that our clinical trial has a success rate that is different from 0.5. 
+
+## Question 7
+
+a) P(−|C) = 1/4 is true. In the conditional probability notation, the given part goes to the right side of the line. This means that given one has prostate cancer, the chances of him getting a negative test is 1/4. Similarly, P(+|C¯) = 1/10 is true.
+
+b) Sensitivity = true positive / (true positive + false negative) and Sensitivity = true negative / (true negative + false positive). Let's calculate this in R.
+
+```{r}
+true_negative = 9/10
+true_positive = 3/4
+false_negative = 1/4
+false_positive = 1/10
+
+sensitivity = true_positive / (true_positive + false_negative)
+sensitivity #3/4
+
+specificity = true_negative / (true_negative + false_positive)
+specificity #9/10
+
+```
+
+Hence, sensitivity is equal to 3/4 and specificity is equal to 9/10.
+
+c) For this question, we are interested in calculating the Bayesian posterior probability of disease given the knowledge of the disease occurence and test result. Let's first start with positive test result and actual disesase occurence.
+
+P(C, +) = P(+ | C)P(C) = (3/4)(0.04) = 0.03
+
+Now, we will do negative test result but there is disease occurence.
+
+P(C, −) = P(− | C)P(C)= (1/4)(0.04) = 0.01
+
+Next is positive test result but no disease.
+
+P(C¯, +) = P(+|C¯)P(C¯) = (1/10)(1-0.04) = 0.096
+
+Finally, we have negative test result and no disease.
+
+P(C¯, -) = P(-|C¯)P(C¯) = (9/10)(1-0.04) = 0.864
+
+Here is a visual representation in a matrix.
+
+```{r}
+b <- (1/10)*(1-0.04)
+c <-(1/4)*(0.04)
+a <- (3/4)*(0.04)
+d <- (9/10)*(1-0.04)
+
+matrix2 <- matrix(c(a,b,c,d),byrow = TRUE, ncol = 2) 
+dimnames(matrix2)<-list(Test_Result=c("Positive", "Negative"), Disease_State=c("Disease","No Disease"))
+matrix2
+```
+
+
+d) P(+) = 0.03 + 0.096 = 0.126 which is the marginal distribution for a positive diagnosis.
+
+P(−)= 1- P(+) = 1 - 0.126 = 0.874 which is the marginal distribution for a negative diagnosis.
+
+P(C and +) = P(+ | C)P(C) = (3/4)(0.04) = 0.03
+
+So P(C | +) = P(+ | C)P(C) / P(+) = 0.03/0.126 = 0.238
+
+## Question 8
+
+a) First of all, let's compute P(Y=1)
+
+$$P(Y=1) = P(Y = 1 \cap X + 1) + P(Y=1 \cap X = 2)$$
+
+$$= P(Y=1|X=1)\cdot P(X=1) + P(Y=1|X=2)\cdot P(X=2)$$
+
+Thus, P(X=1|Y=1) is
+
+$$P(X=1|Y=1) = \frac{P(Y=1|X=1)\cdot P(X=1)}{P(Y=1)}$$
+
+$$P(X=1|Y=1) = \frac{P(Y=1|X=1)\cdot P(X=1)}{P(Y=1|X=1)\cdot P(X=1) + P(Y=1|X=2)\cdot P(X=2)}$$
+
+
+Given that γ is equal to $P(X=1)$ , π1 is equal to $P(Y = 1 | X = 1)$, π2 is equal to $P(Y = 1 | X = 2)$, and 1-γ is equal to $P(X=2)$; then we can say that the above equation equals the following.
+
+$$\frac{\pi_{1}\cdot \gamma}{\pi_{1}\cdot \gamma+\pi_{2}\cdot(1-\gamma )}$$
+
+b) If specificity - which is $1-\pi_{2}$ - is equal to 0.88, then π2 is equal to 0.12. Now, let's start plugging in values to our equation $\frac{\pi_{1}\cdot \gamma}{\pi_{1}\cdot \gamma+\pi_{2}\cdot(1-\gamma )}$
+
+$$\frac{0.86\cdot0.01}{(0.86\cdot0.01)+(0.12\cdot0.99)}$$
+
+$$=\frac{0.0086}{0.1274}$$
+
+$$=0.0675$$
+ 
+ The probability that a woman truely has breast cancer given that she has a positive test result is 6.75%.
+ 
+ c) Let's calculate the joint probabilities for 2x2 of X and Y.
+ 
+ P(Y=1 and X = 1) = P(Y=1|X=1)P(X=1) = 0.86*0.01 = 0.0086
+ 
+ P(Y=2 and X = 1) = P(Y=2|X=1)P(X=1) = (1-0.86)(0.01) = 0.14*0.01 = 0.0014
+ 
+ P(Y = 1 and X = 2) = P(Y=1|X=2)P(X=2) = 0.12*0.99 = 0.1188
+ 
+ P(Y = 2 and X = 2) = P(Y=2|X=2)P(X=2) = (1-0.12)(0.99) = 0.88*0.99 = 0.8712
+ 
+Now, let me convert this into a visual table.
+
+```{r}
+b <- 0.12*0.99
+c <- 0.14*0.01
+a <- 0.86*0.01
+d <- 0.88*0.99
+
+
+
+matrix2 <- matrix(c(a,b,c,d),byrow = TRUE, ncol = 2) 
+dimnames(matrix2)<-list(Test_Result=c("Positive Y=1", "Negative Y=2"), Disease_State=c("Disease X=1","No Disease X=2"))
+matrix2
+
+a>c
+```
+
+ The probability that a women has breast cancer and tested positive (0.0086) for it is lower than the probability that a women does not have breast cancer but tested positive (0.1188) for it. This is a very interesting and good-to-hear scenario.
+ 
+ 
+## Question 9
+
+a) First, let's calculate the differences.
+
+```{r}
+62.4/1000000 - 1.3/1000000
+```
+
+The annual gun homicide rate per 1m residents in the UK is 6.11e-05 less than the rate per 1m in the US.
+
+Now, let's calculate the relative risk.
+
+```{r}
+relativerisk = 62.4/1.3 #48
+relativerisk #48
+```
+
+Relative risk of the annual gun homicide rate per 1m residents in the US is 48 times that of the UK.
+
+b) The relative risk is a better measure because both proportions are very small and their difference of proportions of zero is hence very close to zero. We are usually advised to refrain from comparing proportions when they are too close to 0 or too close to 1, as they can be very misleading. Therefore, the relative risk - which showed a 48-time difference - is better for describing the association between the two figures.
+
+## Question 10
+
+a) Let's first look at the difference in proportions for lung cancer.
+
+```{r}
+0.00140-0.00010 #0.0013 for lung cancer
+```
+
+
+Now, let's look at the difference in proportions for heart disease.
+
+```{r}
+0.00669-0.00413 #0.00256 for heart disease
+```
+
+Cigarrete smoking seems more highly associated with heart disease than with lung cancer according to difference of proportions.
+
+Now, let's look at odds ratio for lung cancer.
+
+```{r}
+odd1_lung = 0.00140/(1-0.00140)
+odd2_lung = 0.00010/(1-0.00010)
+or_lung = odd1_lung / odd2_lung
+or_lung #14.01823 odds ratio for lung cancer
+```
+
+
+Now, odds ratio for heart disease.
+
+```{r}
+odd1_heart = 0.00669/(1-0.00669)
+odd2_heart = 0.00413/(1-0.00413)
+or_heart = odd1_heart / odd2_heart
+or_heart #1.624029 odds ratio for heart disease
+```
+
+The odds of dying from lung cancer are approximately 14.02 times higher for smokers than for nonsmokers, whereas the odds of dying from heart disease are about 1.62 times higher for smokers than for nonsmokers.
+
+Therefore, cigarrete smoking seems more highly associated with lung cancer than with heart disease according to odds ratio.
+
+b) To answer this question, we would have to look at the difference of proportions because it will tell us the excess number of deaths from smoking. Let's say x is the number of smokers in the country. If smokers never smoked, then there would have been 0.0013x fewer deaths per year from lung cancer and 0.00256x fewer deaths from heart disease. Given that 0.00256x is greater than 0.0013x, we can say that if smoking had been stopped, then its largest impact will be on deaths from heart disease (in terms of death count). 
+
